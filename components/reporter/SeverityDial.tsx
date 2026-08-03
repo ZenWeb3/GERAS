@@ -7,10 +7,10 @@ interface Props {
   onChange: (s: Severity) => void;
 }
 
-const LEVELS: Array<{ value: Severity; label: string; sub: string; klass: string }> = [
-  { value: 1, label: 'Minor',    sub: 'No injuries',  klass: 'bg-minor/20 border-minor text-minor' },
-  { value: 2, label: 'Serious',  sub: 'Injuries',     klass: 'bg-serious/20 border-serious text-serious' },
-  { value: 3, label: 'Critical', sub: 'Life at risk', klass: 'bg-critical/25 border-critical text-critical' },
+const LEVELS: Array<{ value: Severity; label: string; sub: string; dot: string; activeBg: string }> = [
+  { value: 1, label: 'Minor',    sub: 'No injuries',  dot: 'bg-minor',   activeBg: 'ring-minor' },
+  { value: 2, label: 'Serious',  sub: 'Injuries',     dot: 'bg-serious', activeBg: 'ring-serious' },
+  { value: 3, label: 'Critical', sub: 'Life at risk', dot: 'bg-accent',  activeBg: 'ring-accent' },
 ];
 
 export default function SeverityDial({ value, onChange }: Props) {
@@ -25,11 +25,14 @@ export default function SeverityDial({ value, onChange }: Props) {
             aria-checked={active}
             onClick={() => onChange(l.value)}
             className={
-              'rounded-xl border py-3 px-2 flex flex-col items-center ' +
-              (active ? l.klass : 'bg-surface border-line hover:border-teal/60')
+              'rounded-2xl px-2 py-4 flex flex-col items-center gap-1.5 transition ' +
+              (active
+                ? `bg-white ring-2 ${l.activeBg} shadow-card`
+                : 'bg-soft hover:bg-line')
             }
           >
-            <span className="text-base font-medium">{l.label}</span>
+            <span className={'h-3 w-3 rounded-full ' + l.dot} />
+            <span className="text-sm font-semibold">{l.label}</span>
             <span className="text-[11px] text-muted">{l.sub}</span>
           </button>
         );

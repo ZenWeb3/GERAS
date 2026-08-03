@@ -59,9 +59,7 @@ export default function ReporterPage() {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        // registration failures shouldn't break the flow
-      });
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
   }, []);
 
@@ -72,10 +70,7 @@ export default function ReporterPage() {
     try {
       const res = await submit({ incident_type: type, severity }, SHORTCODE);
       setOutcome(res);
-      if (res.kind === 'sms_handoff') {
-        // Kick off the OS messaging app immediately.
-        window.location.href = res.sms_uri;
-      }
+      if (res.kind === 'sms_handoff') window.location.href = res.sms_uri;
     } finally {
       setBusy(false);
     }
@@ -102,53 +97,53 @@ export default function ReporterPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] flex flex-col bg-ground text-ink">
+    <main className="min-h-[100dvh] flex flex-col bg-white text-ink">
       <ChannelStrip online={online} accuracy_m={acc} stale={stale} />
 
-      <div className="flex-1 px-4 pt-4 pb-2 space-y-6 overflow-y-auto">
+      <div className="flex-1 px-5 pt-5 pb-3 space-y-7 overflow-y-auto max-w-lg w-full mx-auto">
         <div>
-          <h1 className="text-xl font-semibold">Report an incident</h1>
-          <p className="text-muted text-sm mt-1">
-            No account required. Location is captured automatically.
+          <h1 className="text-3xl font-extrabold tracking-tight">Report an incident</h1>
+          <p className="text-subink text-base mt-1.5">
+            No account needed. Location is captured automatically.
           </p>
         </div>
 
         <section aria-labelledby="type-h">
-          <h2 id="type-h" className="text-xs uppercase tracking-wider text-muted mb-2">Type</h2>
+          <h2 id="type-h" className="text-xs uppercase tracking-wider text-muted mb-2 font-semibold">Type</h2>
           <TypeGrid value={type} onChange={setType} />
         </section>
 
         <section aria-labelledby="sev-h">
-          <h2 id="sev-h" className="text-xs uppercase tracking-wider text-muted mb-2">Severity</h2>
+          <h2 id="sev-h" className="text-xs uppercase tracking-wider text-muted mb-2 font-semibold">Severity</h2>
           <SeverityDial value={severity} onChange={setSeverity} />
         </section>
 
         {outcome?.kind === 'sent_https' && (
-          <div className="rounded-xl bg-teal/15 border border-teal/40 p-3">
-            <div className="text-teal text-sm uppercase tracking-wider">Sent · Data</div>
-            <div className="font-mono text-lg mt-1">{outcome.ref}</div>
-            <div className="text-xs text-muted">
+          <div className="rounded-2xl bg-success/10 border border-success/30 p-4">
+            <div className="text-success text-xs uppercase tracking-wider font-semibold">Sent · Data</div>
+            <div className="font-mono text-2xl font-bold mt-1 tracking-wider">{outcome.ref}</div>
+            <div className="text-xs text-muted mt-0.5">
               ±{outcome.accuracy_m} m{outcome.stale_fix && ' (using last known location)'}
             </div>
-            <button onClick={reset} className="text-xs underline mt-2 text-muted">
+            <button onClick={reset} className="text-sm underline mt-3 text-subink">
               Report another
             </button>
           </div>
         )}
 
         {outcome?.kind === 'error' && (
-          <div className="rounded-xl bg-critical/15 border border-critical/40 p-3">
-            <div className="text-critical text-sm uppercase tracking-wider">Error</div>
+          <div className="rounded-2xl bg-accent/10 border border-accent/30 p-4">
+            <div className="text-accent text-xs uppercase tracking-wider font-semibold">Error</div>
             <div className="text-sm mt-1">{outcome.message}</div>
           </div>
         )}
 
         {note && (
-          <div className="rounded-xl bg-surface2 border border-line p-3 text-sm">{note}</div>
+          <div className="rounded-2xl bg-soft p-3 text-sm">{note}</div>
         )}
       </div>
 
-      <div className="p-4 pt-2 sticky bottom-0 bg-ground/95 backdrop-blur border-t border-line">
+      <div className="p-5 pt-3 sticky bottom-0 bg-white/95 backdrop-blur border-t border-line max-w-lg w-full mx-auto">
         <SendButton ready={ready} busy={busy} onClick={send} />
       </div>
     </main>

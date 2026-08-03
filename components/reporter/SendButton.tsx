@@ -14,10 +14,10 @@ export default function SendButton({ ready, busy, onClick, label }: Props) {
       disabled={!ready || busy}
       aria-busy={busy}
       className={
-        'w-full min-h-[72px] rounded-2xl text-lg font-semibold ' +
+        'w-full min-h-[72px] rounded-full text-lg font-bold tracking-tight transition ' +
         (ready && !busy
-          ? 'bg-critical text-white shadow-lg shadow-critical/30 active:scale-[0.99]'
-          : 'bg-surface2 text-muted border border-line')
+          ? 'bg-accent text-white shadow-cta hover:bg-accent700 active:scale-[0.99]'
+          : 'bg-soft text-muted')
       }
     >
       {busy ? 'Sending…' : (label ?? (ready ? 'Send alert' : 'Choose type and severity'))}
