@@ -5,23 +5,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ground: '#0b1220',
-        surface: '#111a2e',
-        surface2: '#182339',
-        line: '#26324a',
-        ink: '#e7ecf5',
-        muted: '#8b98b3',
-        critical: '#ff3b3b',
-        serious: '#ffb020',
-        minor: '#38bdf8',
-        teal: '#2dd4bf',
-        sms: '#c084fc',
+        ink: '#0a0a0a',
+        subink: '#3f3f46',
+        muted: '#6b7280',
+        line: '#e5e7eb',
+        soft: '#f4f4f5',
+        surface: '#ffffff',
+        accent: '#ff2b2b',       // bold red — primary CTA + critical severity
+        accent700: '#c81919',
+        success: '#16a34a',
+        serious: '#f59e0b',
+        minor: '#0ea5e9',
+        sms: '#7c3aed',          // reserved only for the SMS channel badge
       },
       fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
-      fontVariantNumeric: {
-        tabular: 'tabular-nums',
+      boxShadow: {
+        card: '0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.04)',
+        cta: '0 6px 20px rgba(255,43,43,0.35)',
+      },
+      borderRadius: {
+        '2xl': '20px',
+        '3xl': '28px',
       },
     },
   },
