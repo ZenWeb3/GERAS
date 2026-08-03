@@ -29,9 +29,7 @@ export default function UnitPanel({ lat, lon, assignedId, onAssign }: Props) {
     setErr(null);
     (async () => {
       try {
-        const res = await fetch(`/api/units?lat=${lat}&lon=${lon}&limit=5`, {
-          cache: 'no-store',
-        });
+        const res = await fetch(`/api/units?lat=${lat}&lon=${lon}&limit=5`, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const j = (await res.json()) as { units: Unit[] };
         if (!cancelled) setUnits(j.units);
@@ -39,30 +37,32 @@ export default function UnitPanel({ lat, lon, assignedId, onAssign }: Props) {
         if (!cancelled) setErr((e as Error).message);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [lat, lon]);
 
-  if (err) return <div className="text-critical text-xs">{err}</div>;
+  if (err) return <div className="text-accent text-xs">{err}</div>;
   if (units === null) return <div className="text-muted text-xs">Loading nearest units…</div>;
   if (units.length === 0) return <div className="text-muted text-xs">No units available.</div>;
 
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-2">
       {units.map((u) => {
         const isAssigned = u.id === assignedId;
         return (
           <li
             key={u.id}
             className={
-              'flex items-center gap-2 rounded border px-2 py-1.5 text-xs ' +
-              (isAssigned ? 'border-teal/60 bg-teal/10' : 'border-line bg-surface2')
+              'flex items-center gap-3 rounded-2xl px-3 py-2.5 transition ' +
+              (isAssigned ? 'bg-ink text-white' : 'bg-soft')
             }
           >
+            <div className={'h-9 w-9 rounded-xl grid place-items-center font-mono text-xs font-bold ' +
+              (isAssigned ? 'bg-white/15' : 'bg-white')}>
+              {u.callsign.split('-')[1] ?? u.callsign.slice(-2)}
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="font-mono">{u.callsign}</div>
-              <div className="text-muted">
+              <div className="font-semibold text-sm">{u.callsign}</div>
+              <div className={'text-xs ' + (isAssigned ? 'text-white/70' : 'text-muted')}>
                 {u.station} · {u.km.toFixed(1)} km · ~{u.eta_min} min
               </div>
             </div>
@@ -70,10 +70,10 @@ export default function UnitPanel({ lat, lon, assignedId, onAssign }: Props) {
               onClick={() => onAssign(u.id)}
               disabled={isAssigned}
               className={
-                'text-[11px] uppercase tracking-wider px-2 py-1 rounded ' +
+                'text-xs font-semibold px-3 py-1.5 rounded-full transition ' +
                 (isAssigned
-                  ? 'bg-teal/20 text-teal'
-                  : 'bg-teal/80 hover:bg-teal text-black')
+                  ? 'bg-white/15 text-white'
+                  : 'bg-accent text-white hover:bg-accent700')
               }
             >
               {isAssigned ? 'Assigned' : 'Assign'}

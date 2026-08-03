@@ -12,22 +12,21 @@ interface Props {
 }
 
 const SEV_FILL: Record<1 | 2 | 3, string> = {
-  1: '#38bdf8',
-  2: '#ffb020',
-  3: '#ff3b3b',
+  1: '#0ea5e9',
+  2: '#f59e0b',
+  3: '#ff2b2b',
 };
 
-// Diamond for SMS-origin, circle for HTTPS. Severity encoded by colour AND
-// shape so we never rely on colour alone (CLAUDE.md §6).
+// Diamond = SMS-origin, circle = HTTPS. Severity encoded by colour AND shape.
 function iconFor(inc: Incident, selected: boolean): L.DivIcon {
   const isSms = inc.channel_first === 'sms';
   const fill = SEV_FILL[inc.severity as 1 | 2 | 3];
-  const size = selected ? 22 : 16;
+  const size = selected ? 24 : 18;
   const shape = isSms
-    ? `<div style="width:${size}px;height:${size}px;background:${fill};transform:rotate(45deg);border:2px solid #0b1220;box-shadow:0 0 0 1px ${fill}66;"></div>`
-    : `<div style="width:${size}px;height:${size}px;background:${fill};border-radius:9999px;border:2px solid #0b1220;box-shadow:0 0 0 1px ${fill}66;"></div>`;
+    ? `<div style="width:${size}px;height:${size}px;background:${fill};transform:rotate(45deg);border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);"></div>`
+    : `<div style="width:${size}px;height:${size}px;background:${fill};border-radius:9999px;border:2px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,.25);"></div>`;
   const smsBadge = isSms
-    ? `<span style="position:absolute;top:-6px;right:-6px;background:#c084fc;color:#0b1220;font-size:8px;font-weight:700;padding:1px 3px;border-radius:3px;">SMS</span>`
+    ? `<span style="position:absolute;top:-8px;right:-8px;background:#7c3aed;color:#ffffff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:9999px;letter-spacing:.04em;">SMS</span>`
     : '';
   return L.divIcon({
     className: '',
@@ -53,12 +52,13 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
       zoomControl: true,
       preferCanvas: true,
     });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Cartodb Voyager — clean neutral basemap that reads well with red/amber markers.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      attribution: '&copy; OpenStreetMap',
+      subdomains: 'abcd',
+      attribution: '&copy; OpenStreetMap · &copy; CARTO',
     }).addTo(map);
     mapRef.current = map;
-
     return () => {
       map.remove();
       mapRef.current = null;
@@ -66,14 +66,12 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
     };
   }, [initialCenter]);
 
-  // Reconcile markers.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const store = markersRef.current;
     const nextIds = new Set(incidents.map((i) => i.id));
 
-    // remove gone
     for (const [id, marker] of store) {
       if (!nextIds.has(id)) {
         marker.remove();
@@ -81,7 +79,6 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
       }
     }
 
-    // add / update
     for (const inc of incidents) {
       const selected = inc.id === selectedId;
       const existing = store.get(inc.id);
@@ -90,30 +87,23 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
         existing.setIcon(iconFor(inc, selected));
         continue;
       }
-      const marker = L.marker([inc.lat, inc.lon], {
-        icon: iconFor(inc, selected),
-        keyboard: true,
-      })
+      const marker = L.marker([inc.lat, inc.lon], { icon: iconFor(inc, selected), keyboard: true })
         .addTo(map)
         .on('click', () => onSelect(inc.id));
       store.set(inc.id, marker);
 
-      // Pulse the first time we see it.
       if (!pulsedRef.current.has(inc.id)) {
         pulsedRef.current.add(inc.id);
         const el = marker.getElement();
         if (el) {
           el.style.transition = 'transform 350ms ease-out';
           el.style.transform = 'scale(1.6)';
-          setTimeout(() => {
-            el.style.transform = 'scale(1)';
-          }, 350);
+          setTimeout(() => { el.style.transform = 'scale(1)'; }, 350);
         }
       }
     }
   }, [incidents, selectedId, onSelect]);
 
-  // Fly to selected.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedId) return;
@@ -125,7 +115,7 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 bg-ground"
+      className="absolute inset-0 bg-soft"
       style={{ minHeight: 240 }}
     />
   );

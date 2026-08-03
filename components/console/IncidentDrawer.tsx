@@ -13,50 +13,52 @@ interface Props {
 
 const STATUSES: Status[] = ['new', 'triaged', 'dispatched', 'onscene', 'resolved', 'cancelled'];
 
+const severityText: Record<1 | 2 | 3, string> = {
+  1: 'text-minor',
+  2: 'text-[#a35a00]',
+  3: 'text-accent',
+};
+
 export default function IncidentDrawer({ incident, onClose, onPatch }: Props) {
   const [notes, setNotes] = useState<string>(incident.notes ?? '');
-
-  useEffect(() => {
-    setNotes(incident.notes ?? '');
-  }, [incident.id, incident.notes]);
+  useEffect(() => setNotes(incident.notes ?? ''), [incident.id, incident.notes]);
 
   const isSms = incident.channel_first === 'sms';
   const seenBoth = incident.channels_seen.length > 1;
+  const sev = incident.severity as 1 | 2 | 3;
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-surface/95 backdrop-blur border-l border-line overflow-y-auto">
-      <div className="p-4 flex items-start justify-between border-b border-line">
+    <div className="absolute right-0 top-0 bottom-0 w-full md:max-w-md bg-white shadow-card border-l border-line overflow-y-auto">
+      <div className="p-5 flex items-start justify-between border-b border-line">
         <div>
-          <div className="text-xs text-muted uppercase tracking-wider">
-            {typeLabel[incident.incident_type]} · {severityLabel[incident.severity as 1 | 2 | 3]}
+          <div className={'text-xs uppercase tracking-wider font-semibold ' + severityText[sev]}>
+            {typeLabel[incident.incident_type]} · {severityLabel[sev]}
           </div>
-          <div className="font-mono text-sm mt-0.5">{incident.ref}</div>
+          <div className="font-mono text-lg font-bold tracking-wider mt-1">{incident.ref}</div>
         </div>
         <button
           onClick={onClose}
-          className="text-muted hover:text-ink text-xl leading-none"
+          className="h-9 w-9 rounded-full bg-soft hover:bg-line grid place-items-center text-lg leading-none"
           aria-label="Close"
         >
           ×
         </button>
       </div>
 
-      <div className="p-4 space-y-4 text-sm">
+      <div className="p-5 space-y-6 text-sm">
         <section>
-          <div className="text-xs uppercase tracking-wider text-muted mb-1">Channel</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Channel</div>
           <div className="flex flex-wrap gap-1.5">
             <span
               className={
-                'text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border ' +
-                (isSms
-                  ? 'bg-sms/15 text-sms border-sms/40'
-                  : 'bg-teal/10 text-teal border-teal/40')
+                'text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full font-semibold ' +
+                (isSms ? 'bg-sms/10 text-sms' : 'bg-success/10 text-success')
               }
             >
               First: {incident.channel_first}
             </span>
             {seenBoth && (
-              <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded border bg-surface2 text-ink border-line">
+              <span className="text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full bg-soft text-subink font-semibold">
                 Merged: {incident.channels_seen.join(' + ')}
               </span>
             )}
@@ -64,48 +66,43 @@ export default function IncidentDrawer({ incident, onClose, onPatch }: Props) {
         </section>
 
         <section>
-          <div className="text-xs uppercase tracking-wider text-muted mb-1">Location</div>
-          <div className="font-mono">
-            {coord(incident.lat)}, {coord(incident.lon)}
-          </div>
-          <div className="text-muted text-xs mt-0.5">
-            ±{incident.accuracy_m ?? '—'} m
-          </div>
+          <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Location</div>
+          <div className="font-mono text-base">{coord(incident.lat)}, {coord(incident.lon)}</div>
+          <div className="text-muted text-xs mt-0.5">±{incident.accuracy_m ?? '—'} m</div>
         </section>
 
         <section>
-          <div className="text-xs uppercase tracking-wider text-muted mb-1">Timing</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Timing</div>
           <div>
             Received {ago(incident.server_ts)} ago
-            {incident.client_ts &&
-              ` (client sent ${ago(incident.client_ts)} ago)`}
+            {incident.client_ts && ` (client sent ${ago(incident.client_ts)} ago)`}
           </div>
         </section>
 
         {incident.reporter_phone && (
           <section>
-            <div className="text-xs uppercase tracking-wider text-muted mb-1">Reporter</div>
+            <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Reporter</div>
             <a
               href={`tel:${incident.reporter_phone}`}
-              className="text-teal hover:underline font-mono"
+              className="inline-flex items-center gap-2 rounded-full bg-soft hover:bg-line px-3 py-1.5 font-mono text-sm"
             >
-              {incident.reporter_phone}
+              📞 {incident.reporter_phone}
             </a>
           </section>
         )}
 
         <section>
-          <div className="text-xs uppercase tracking-wider text-muted mb-2">Status</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Status</div>
           <div className="flex flex-wrap gap-1.5">
             {STATUSES.map((s) => (
               <button
                 key={s}
                 onClick={() => onPatch({ status: s })}
                 className={
-                  'text-xs px-2.5 py-1 rounded border ' +
+                  'text-xs px-3 py-1.5 rounded-full font-semibold transition ' +
                   (incident.status === s
-                    ? 'bg-teal/20 text-teal border-teal/60'
-                    : 'bg-surface2 text-ink border-line hover:border-teal/40')
+                    ? 'bg-ink text-white'
+                    : 'bg-soft text-subink hover:bg-line')
                 }
               >
                 {statusLabel[s]}
@@ -115,7 +112,7 @@ export default function IncidentDrawer({ incident, onClose, onPatch }: Props) {
         </section>
 
         <section>
-          <div className="text-xs uppercase tracking-wider text-muted mb-2">Nearest units</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Nearest units</div>
           <UnitPanel
             lat={incident.lat}
             lon={incident.lon}
@@ -125,17 +122,16 @@ export default function IncidentDrawer({ incident, onClose, onPatch }: Props) {
         </section>
 
         <section>
-          <div className="text-xs uppercase tracking-wider text-muted mb-1">Notes</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Notes</div>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             onBlur={() => {
-              if ((notes || null) !== (incident.notes ?? null)) {
-                onPatch({ notes });
-              }
+              if ((notes || null) !== (incident.notes ?? null)) onPatch({ notes });
             }}
             rows={3}
-            className="w-full rounded bg-surface2 border border-line px-2 py-1.5 text-sm"
+            className="w-full rounded-2xl bg-soft focus:bg-white border border-transparent focus:border-ink outline-none px-3 py-2 text-sm"
+            placeholder="Add operator notes…"
           />
         </section>
       </div>

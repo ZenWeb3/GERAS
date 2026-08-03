@@ -7,12 +7,10 @@ import IncidentDrawer from './IncidentDrawer';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import type { Incident } from '@/lib/types';
 
-// Leaflet touches window at module scope. Load it client-only or Next's build
-// will die (see CLAUDE.md §6).
 const IncidentMap = dynamic(() => import('./IncidentMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full grid place-items-center text-muted text-sm">
+    <div className="w-full h-full grid place-items-center text-muted text-sm bg-soft">
       Loading map…
     </div>
   ),
@@ -23,6 +21,7 @@ export default function ConsoleShell() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'open' | 'critical'>('all');
   const audio = useRef<HTMLAudioElement | null>(null);
   const originalTitle = useRef<string>('');
   const newCount = useRef(0);
@@ -39,9 +38,7 @@ export default function ConsoleShell() {
         if (!cancelled) setError((e as Error).message);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -53,12 +50,10 @@ export default function ConsoleShell() {
         { event: 'INSERT', schema: 'public', table: 'incidents' },
         (payload) => {
           const row = payload.new as Incident;
-          setIncidents((prev) =>
-            prev.some((i) => i.id === row.id) ? prev : [row, ...prev],
-          );
+          setIncidents((prev) => (prev.some((i) => i.id === row.id) ? prev : [row, ...prev]));
           newCount.current += 1;
           document.title = `(${newCount.current}) ${originalTitle.current}`;
-          try { audio.current?.play().catch(() => {}); } catch { /* audio blocked */ }
+          try { audio.current?.play().catch(() => {}); } catch {}
         },
       )
       .on(
@@ -75,6 +70,12 @@ export default function ConsoleShell() {
       document.title = originalTitle.current;
     };
   }, [sb]);
+
+  const visible = useMemo(() => {
+    if (filter === 'open') return incidents.filter((i) => i.status !== 'resolved' && i.status !== 'cancelled');
+    if (filter === 'critical') return incidents.filter((i) => i.severity === 3);
+    return incidents;
+  }, [incidents, filter]);
 
   const selected = useMemo(
     () => incidents.find((i) => i.id === selectedId) ?? null,
@@ -99,14 +100,47 @@ export default function ConsoleShell() {
     document.title = originalTitle.current;
   }, []);
 
+  const openCount = incidents.filter((i) => i.status !== 'resolved' && i.status !== 'cancelled').length;
+  const criticalCount = incidents.filter((i) => i.severity === 3).length;
+
   return (
-    <div className="h-[calc(100vh-3rem)] grid grid-cols-[340px_1fr] bg-ground text-ink">
-      <aside className="border-r border-line overflow-y-auto" onClick={clearBadge}>
-        <IncidentList
-          incidents={incidents}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-        />
+    <div className="h-full grid grid-cols-1 md:grid-cols-[380px_1fr]">
+      <aside className="border-r border-line flex flex-col bg-white" onClick={clearBadge}>
+        <div className="px-5 pt-4 pb-3 border-b border-line">
+          <div className="flex items-baseline justify-between">
+            <h1 className="text-xl font-extrabold tracking-tight">Incidents</h1>
+            <span className="text-xs text-muted">{visible.length} shown</span>
+          </div>
+          <div className="mt-3 flex gap-1.5">
+            {(['all', 'open', 'critical'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={
+                  'px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition ' +
+                  (filter === f
+                    ? 'bg-ink text-white'
+                    : 'bg-soft text-subink hover:bg-line')
+                }
+              >
+                {f}
+                {f === 'open' && openCount > 0 && (
+                  <span className="ml-1.5 text-[10px] opacity-80">{openCount}</span>
+                )}
+                {f === 'critical' && criticalCount > 0 && (
+                  <span className="ml-1.5 text-[10px] opacity-80">{criticalCount}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <IncidentList
+            incidents={visible}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        </div>
       </aside>
       <section className="relative">
         <IncidentMap
@@ -122,7 +156,7 @@ export default function ConsoleShell() {
           />
         )}
         {error && (
-          <div className="absolute bottom-3 left-3 right-3 md:right-auto md:max-w-md bg-critical/20 border border-critical text-ink px-3 py-2 rounded text-sm">
+          <div className="absolute bottom-3 left-3 right-3 md:right-auto md:max-w-md bg-accent text-white px-4 py-2.5 rounded-2xl text-sm shadow-card">
             {error}
           </div>
         )}
