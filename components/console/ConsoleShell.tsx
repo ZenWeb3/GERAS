@@ -142,7 +142,7 @@ export default function ConsoleShell() {
           />
         </div>
       </aside>
-      <section className="relative">
+      <section className="relative h-full min-h-0 overflow-hidden">
         <IncidentMap
           incidents={incidents}
           selectedId={selectedId}
