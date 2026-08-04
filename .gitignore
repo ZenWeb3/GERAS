@@ -12,3 +12,7 @@ next-env.d.ts
 coverage
 .tsbuildinfo
 tsconfig.tsbuildinfo
+
+certificates
+.claude/
+CLAUDE.md
