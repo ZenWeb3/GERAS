@@ -121,26 +121,33 @@ create or replace function upsert_incident(
 ) returns table (id uuid, created boolean, ref char(6))
 language plpgsql as $$
 begin
+  -- CTE aliases dodge the RETURNING/OUT-column name collision on `ref`.
   return query
-  insert into incidents (
-    ref, lat, lon, accuracy_m, incident_type, severity,
-    reporter_phone, device_id, channel_first, channels_seen,
-    client_ts, notes
-  ) values (
-    p_ref, p_lat, p_lon, p_accuracy_m, p_incident_type, p_severity,
-    p_reporter_phone, p_device_id, p_channel, array[p_channel]::channel_enum[],
-    p_client_ts, p_notes
+  with upserted as (
+    insert into incidents (
+      ref, lat, lon, accuracy_m, incident_type, severity,
+      reporter_phone, device_id, channel_first, channels_seen,
+      client_ts, notes
+    ) values (
+      p_ref, p_lat, p_lon, p_accuracy_m, p_incident_type, p_severity,
+      p_reporter_phone, p_device_id, p_channel, array[p_channel]::channel_enum[],
+      p_client_ts, p_notes
+    )
+    on conflict (ref) do update set
+      channels_seen  = (
+        select array(select distinct unnest(incidents.channels_seen || excluded.channels_seen))
+      ),
+      reporter_phone = coalesce(incidents.reporter_phone, excluded.reporter_phone),
+      accuracy_m     = coalesce(incidents.accuracy_m,     excluded.accuracy_m),
+      notes          = coalesce(incidents.notes,          excluded.notes),
+      -- keep the earliest client_ts if both provided one
+      client_ts      = least(incidents.client_ts, excluded.client_ts)
+    returning
+      incidents.id  as u_id,
+      (xmax = 0)    as u_created,
+      incidents.ref as u_ref
   )
-  on conflict (ref) do update set
-    channels_seen  = (
-      select array(select distinct unnest(incidents.channels_seen || excluded.channels_seen))
-    ),
-    reporter_phone = coalesce(incidents.reporter_phone, excluded.reporter_phone),
-    accuracy_m     = coalesce(incidents.accuracy_m,     excluded.accuracy_m),
-    notes          = coalesce(incidents.notes,          excluded.notes),
-    -- keep the earliest client_ts if both provided one
-    client_ts      = least(incidents.client_ts, excluded.client_ts)
-  returning incidents.id, (xmax = 0) as created, incidents.ref;
+  select u_id, u_created, u_ref from upserted;
 end $$;
 
 -- Row Level Security ----------------------------------------------------
