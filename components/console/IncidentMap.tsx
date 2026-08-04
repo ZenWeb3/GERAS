@@ -3,12 +3,42 @@
 import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { ago, coord, severityLabel, statusLabel, typeLabel } from '@/lib/format';
 import type { Incident } from '@/lib/types';
 
 interface Props {
   incidents: Incident[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
+  ));
+}
+
+function tooltipHtml(inc: Incident): string {
+  const sev = inc.severity as 1 | 2 | 3;
+  const sevColor = SEV_FILL[sev];
+  const isSms = inc.channel_first === 'sms';
+  return `
+    <div style="font-family: Inter, system-ui, sans-serif; min-width: 180px;">
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+        <span style="width:8px;height:8px;border-radius:9999px;background:${sevColor};display:inline-block;"></span>
+        <strong style="font-size:13px;color:#0a0a0a;">${escapeHtml(typeLabel[inc.incident_type])}</strong>
+        <span style="color:#6b7280;font-size:11px;">·</span>
+        <span style="color:#6b7280;font-size:11px;">${escapeHtml(severityLabel[sev])}</span>
+        ${isSms ? '<span style="margin-left:auto;background:#7c3aed;color:#fff;font-size:9px;padding:1px 5px;border-radius:9999px;font-weight:700;letter-spacing:.04em;">SMS</span>' : ''}
+      </div>
+      <div style="font-family: ui-monospace, monospace; font-size:11px; color:#3f3f46; margin-bottom:2px;">
+        ${escapeHtml(inc.ref)} · ${coord(inc.lat)}, ${coord(inc.lon)}
+      </div>
+      <div style="font-size:11px; color:#6b7280;">
+        ${escapeHtml(statusLabel[inc.status])} · ${escapeHtml(ago(inc.server_ts))} ago
+      </div>
+    </div>
+  `;
 }
 
 const SEV_FILL: Record<1 | 2 | 3, string> = {
@@ -50,9 +80,50 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
     const map = L.map(el, {
       center: initialCenter,
       zoom: 11,
-      zoomControl: true,
+      zoomControl: false, // we re-add it in the bottom-right for reach on mobile
       preferCanvas: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
+      touchZoom: true,
+      dragging: true,
+      keyboard: true,
+      zoomSnap: 0.5,
+      zoomDelta: 0.5,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 90,
+      inertia: true,
+      worldCopyJump: true,
+      minZoom: 5,
+      maxZoom: 18,
     });
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // "Fit to incidents" button — one-click zoom-to-all.
+    const FitControl = L.Control.extend({
+      onAdd() {
+        const btn = L.DomUtil.create('a', 'leaflet-bar');
+        btn.href = '#';
+        btn.title = 'Fit to all incidents';
+        btn.setAttribute('aria-label', 'Fit to all incidents');
+        btn.style.cssText =
+          'display:flex;align-items:center;justify-content:center;width:34px;height:34px;background:#fff;color:#0a0a0a;text-decoration:none;font-weight:700;';
+        btn.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V5a2 2 0 0 1 2-2h4M21 9V5a2 2 0 0 0-2-2h-4M3 15v4a2 2 0 0 0 2 2h4M21 15v4a2 2 0 0 1-2 2h-4"/></svg>';
+        L.DomEvent.on(btn, 'click', (e: Event) => {
+          L.DomEvent.preventDefault(e);
+          const bounds: L.LatLngBounds[] = [];
+          markersRef.current.forEach((m) => bounds.push(m.getLatLng().toBounds(1)));
+          if (bounds.length === 0) {
+            map.setView(initialCenter, 11);
+            return;
+          }
+          const combined = bounds.reduce((acc, b) => acc.extend(b));
+          map.fitBounds(combined, { padding: [40, 40], maxZoom: 14 });
+        });
+        return btn;
+      },
+    });
+    new FitControl({ position: 'bottomright' }).addTo(map);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       subdomains: 'abcd',
@@ -104,10 +175,17 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
       if (existing) {
         existing.setLatLng([inc.lat, inc.lon]);
         existing.setIcon(iconFor(inc, selected));
+        existing.setTooltipContent(tooltipHtml(inc));
         continue;
       }
       const marker = L.marker([inc.lat, inc.lon], { icon: iconFor(inc, selected), keyboard: true })
         .addTo(map)
+        .bindTooltip(tooltipHtml(inc), {
+          direction: 'top',
+          offset: [0, -6],
+          opacity: 1,
+          className: 'geras-tip',
+        })
         .on('click', () => onSelect(inc.id));
       store.set(inc.id, marker);
 

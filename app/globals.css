@@ -21,6 +21,28 @@ html, body {
 
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
+/* Leaflet skin overrides so tooltips + zoom controls match the app. */
+.leaflet-container { font: inherit; }
+.leaflet-tooltip.geras-tip {
+  background: #ffffff;
+  color: #0a0a0a;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 8px 10px;
+  white-space: normal;
+}
+.leaflet-tooltip.geras-tip::before { display: none; } /* hide default arrow */
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: #ffffff;
+  color: #0a0a0a;
+  border-color: #e5e7eb;
+}
+.leaflet-bar { box-shadow: 0 4px 14px rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
+.leaflet-bar a:first-child { border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.leaflet-bar a:last-child  { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
