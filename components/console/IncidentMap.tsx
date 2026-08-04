@@ -124,10 +124,11 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
       },
     });
     new FitControl({ position: 'bottomright' }).addTo(map);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // Standard OSM tiles — visible street/road/settlement names at every zoom,
+    // which the CARTO Voyager basemap was hiding until zoom ~14.
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
-      attribution: '&copy; OpenStreetMap · &copy; CARTO',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
     mapRef.current = map;
 
