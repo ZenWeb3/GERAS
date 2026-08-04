@@ -46,20 +46,39 @@ export default function IncidentMap({ incidents, selectedId, onSelect }: Props) 
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, {
+    const el = containerRef.current;
+    const map = L.map(el, {
       center: initialCenter,
       zoom: 11,
       zoomControl: true,
       preferCanvas: true,
     });
-    // Cartodb Voyager — clean neutral basemap that reads well with red/amber markers.
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       subdomains: 'abcd',
       attribution: '&copy; OpenStreetMap · &copy; CARTO',
     }).addTo(map);
     mapRef.current = map;
+
+    // Leaflet reads container size at construction. If the parent hadn't
+    // finished laying out yet (common with dynamic imports + flex layouts),
+    // tiles cover the wrong bounds and the map appears zoomed out. Force a
+    // resync now and whenever the container resizes.
+    const nudge = () => {
+      map.invalidateSize({ pan: false });
+      // If the map still thinks the container is tiny, recenter at the intended zoom.
+      const size = map.getSize();
+      if (size.x < 200 || size.y < 200) return;
+      map.setView(initialCenter, 11, { animate: false });
+    };
+    requestAnimationFrame(nudge);
+    setTimeout(nudge, 200);
+
+    const ro = new ResizeObserver(() => map.invalidateSize({ pan: false }));
+    ro.observe(el);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
       markersRef.current.clear();

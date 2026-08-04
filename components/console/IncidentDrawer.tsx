@@ -28,8 +28,8 @@ export default function IncidentDrawer({ incident, onClose, onPatch }: Props) {
   const sev = incident.severity as 1 | 2 | 3;
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-full md:max-w-md bg-white shadow-card border-l border-line overflow-y-auto">
-      <div className="p-5 flex items-start justify-between border-b border-line">
+    <div className="absolute right-0 top-0 bottom-0 w-full md:max-w-md bg-white shadow-card border-l border-line flex flex-col z-[500]">
+      <div className="p-5 flex items-start justify-between border-b border-line shrink-0">
         <div>
           <div className={'text-xs uppercase tracking-wider font-semibold ' + severityText[sev]}>
             {typeLabel[incident.incident_type]} · {severityLabel[sev]}
@@ -45,7 +45,7 @@ export default function IncidentDrawer({ incident, onClose, onPatch }: Props) {
         </button>
       </div>
 
-      <div className="p-5 space-y-6 text-sm">
+      <div className="p-5 space-y-6 text-sm flex-1 min-h-0 overflow-y-auto">
         <section>
           <div className="text-[11px] uppercase tracking-wider text-muted mb-2 font-semibold">Channel</div>
           <div className="flex flex-wrap gap-1.5">

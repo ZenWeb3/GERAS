@@ -12,8 +12,8 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
   if (aal?.currentLevel !== 'aal2') redirect('/login');
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-white">
-      <header className="h-14 border-b border-line flex items-center justify-between px-5">
+    <div className="h-[100dvh] flex flex-col bg-white overflow-hidden">
+      <header className="h-14 shrink-0 border-b border-line flex items-center justify-between px-5">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-xl bg-ink text-white grid place-items-center font-bold text-sm">G</div>
           <div>
@@ -31,7 +31,7 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
           <span className="text-sm text-subink">{user.email}</span>
         </div>
       </header>
-      <div className="flex-1 overflow-hidden">{children}</div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
     </div>
   );
 }
