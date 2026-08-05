@@ -104,9 +104,15 @@ export default function ConsoleShell() {
   const criticalCount = incidents.filter((i) => i.severity === 3).length;
 
   return (
-    <div className="h-full grid grid-cols-1 md:grid-cols-[380px_1fr]">
-      <aside className="border-r border-line flex flex-col bg-white" onClick={clearBadge}>
-        <div className="px-5 pt-4 pb-3 border-b border-line">
+    <div
+      className="grid grid-cols-1 md:grid-cols-[380px_1fr]"
+      style={{ height: 'calc(100dvh - 3.5rem)' }}
+    >
+      <aside
+        className="border-r border-line flex flex-col bg-white min-h-0 overflow-hidden"
+        onClick={clearBadge}
+      >
+        <div className="px-5 pt-4 pb-3 border-b border-line shrink-0">
           <div className="flex items-baseline justify-between">
             <h1 className="text-xl font-extrabold tracking-tight">Incidents</h1>
             <span className="text-xs text-muted">{visible.length} shown</span>
@@ -134,7 +140,7 @@ export default function ConsoleShell() {
             ))}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <IncidentList
             incidents={visible}
             selectedId={selectedId}
