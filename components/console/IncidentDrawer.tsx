@@ -49,7 +49,7 @@ export default function IncidentDrawer({ incident, onClose, onPatch }: Props) {
       </div>
 
       <div
-        className="p-5 pb-8 space-y-6 text-sm overscroll-contain [scrollbar-gutter:stable]"
+        className="p-5 pb-8 space-y-6 text-sm overscroll-contain no-scrollbar"
         style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto' }}
       >
         <section>
