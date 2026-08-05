@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createSupabaseServer } from '@/lib/supabase/server';
+import LogoutButton from '@/components/console/LogoutButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,8 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
             <span className="h-1.5 w-1.5 rounded-full bg-success" />
             Live
           </span>
-          <span className="text-sm text-subink">{user.email}</span>
+          <span className="text-sm text-subink hidden sm:inline">{user.email}</span>
+          <LogoutButton />
         </div>
       </header>
       <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
