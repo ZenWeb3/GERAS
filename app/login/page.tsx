@@ -30,16 +30,25 @@ export default function LoginPage() {
       if (error) throw error;
       const { data: factors, error: fErr } = await sb.auth.mfa.listFactors();
       if (fErr) throw fErr;
-      const totp = factors?.totp?.find((f) => f.status === 'verified');
-      if (totp) {
-        const { data: ch, error: cErr } = await sb.auth.mfa.challenge({ factorId: totp.id });
+      const verified = factors?.totp?.find((f) => f.status === 'verified');
+      if (verified) {
+        const { data: ch, error: cErr } = await sb.auth.mfa.challenge({ factorId: verified.id });
         if (cErr) throw cErr;
-        setFactorId(totp.id);
+        setFactorId(verified.id);
         setChallengeId(ch.id);
         setStage('totp');
         return;
       }
-      const { data: enr, error: enrErr } = await sb.auth.mfa.enroll({ factorType: 'totp' });
+      // Clean up any half-enrolled factors from an earlier abandoned attempt —
+      // Supabase rejects a fresh enroll while unverified factors linger.
+      const unverified = factors?.totp?.filter((f) => f.status !== 'verified') ?? [];
+      for (const f of unverified) {
+        await sb.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+      }
+      const { data: enr, error: enrErr } = await sb.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: `dispatcher-${Date.now()}`,
+      });
       if (enrErr) throw enrErr;
       setFactorId(enr.id);
       setEnrolQr(enr.totp.qr_code);
